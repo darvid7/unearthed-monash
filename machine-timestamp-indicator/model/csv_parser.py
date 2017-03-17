@@ -4,8 +4,10 @@
 @modified: 
 
 """
+from .machine import Machine
+
 class CsvSheetParser:
-    """Parses
+    """Parses a unearthed-hackathon/Cadia plant downtime/PI/*.csv files.
 
     Args:
         csv_data:
