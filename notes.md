@@ -83,3 +83,5 @@ set db query = your query i.e. SELECT * FROM [13Blasthole XRF];
 3. Delpoy web service
 
 4. Configure and get API key, can query this (it is a REST API) 
+
+5. Can look at prediction by looking at the bottom and clicking output log
