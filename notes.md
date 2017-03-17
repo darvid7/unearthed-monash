@@ -24,6 +24,8 @@
 
 2. Query SQL DB
 
-3. Work on ML aspect
+3. Work on ML model
 
+4. Run hope it works
 
+5. Fancy front end stuff
