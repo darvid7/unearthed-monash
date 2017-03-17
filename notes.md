@@ -24,7 +24,7 @@ Prove the data can predict stuff
 
 # Steps:
 
-1. Set up Flask on Azure
+1. Set up Flask on Azure [done]
 
 2. Query SQL DB
 
@@ -33,3 +33,8 @@ Prove the data can predict stuff
 4. Run hope it works
 
 5. Fancy front end stuff
+
+# DB Connection
+
+teammonash
+qwer1234!
