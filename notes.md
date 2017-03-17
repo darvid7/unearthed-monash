@@ -26,9 +26,9 @@ Prove the data can predict stuff
 
 1. Set up Flask on Azure [done]
 
-2. Query SQL DB
+2. Query SQL DB [done]
 
-3. Work on ML model
+3. Work on ML model [doing]
 
 4. Run hope it works
 
