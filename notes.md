@@ -1,3 +1,7 @@
+# Challenge 4
+
+Prove the data can predict stuff
+
 # Setup
 
 1. Frontend webserver w/ graphs 
@@ -20,7 +24,7 @@
 
 # Steps:
 
-1. Set up Flask
+1. Set up Flask on Azure
 
 2. Query SQL DB
 
