@@ -89,7 +89,7 @@ train_step = tf.train.GradientDescentOptimizer(0.05).minimize(error_function)
 sess.run(tf.initialize_all_variables())
 
 training_inputs, training_outputs = get_test_data('./', 'training-data.csv')
-testing_inputs, test_outputs = get_test_data('./', 'testing-data.csv')
+testing_inputs, testing_outputs = get_test_data('./', 'testing-data.csv')
 print("Training inputs")
 print(training_inputs)
 print("Training outputs")
@@ -99,9 +99,11 @@ for i in range(20000):
                        feed_dict={inputs: np.array(training_inputs),
                                   desired_outputs: np.array(training_outputs)})
     print(loss)
-actual_outputs = [x insess.run(logits, feed_dict={inputs: np.array(testing_inputs)})
-accuracy
-print()
-print(sess.run(logits, feed_dict={inputs: np.array([[0.0, 1.0]])}))
-print(sess.run(logits, feed_dict={inputs: np.array([[1.0, 0.0]])}))
-print(sess.run(logits, feed_dict={inputs: np.array([[1.0, 1.0]])}))
+actual_outputs = [0 if x < 0.5 else 1 for x in sess.run(logits, feed_dict={inputs: np.array(testing_inputs)})]
+print(actual_outputs)
+correct_answers = 0
+for actual_output_index in actual_outputs:
+    actual_output = actual_outputs[actual_output_index]
+    if int(actual_output) == int(testing_outputs[actual_output_index][0]):
+        correct_answers += 1
+print("Success rate = %s percent" % ((correct_answers / len(actual_outputs)) * 100))
