@@ -29,6 +29,8 @@ SHELVE_PERSISTANCE_PATH = "/Users/David/Desktop/unearthed-2017/unearthed-monash/
 NEURAL_NETWORK_DATA_PATH = "/Users/David/Desktop/unearthed-2017/unearthed-monash/unearthed-monash/" \
                           "machine-timestamp-indicator/data/out/neural-network/"
 
+DECISION_TREE_DATA_PATH = "/Users/David/Desktop/unearthed-2017/unearthed-monash/unearthed-monash/" \
+                          "machine-timestamp-indicator/data/out/decision-tree/"
 use_persisting = False
 
 SAG_MILL_MACHINE_CODES = [
@@ -208,7 +210,7 @@ print(len(new_day.datetime_instances))
 print("Processed training labels")
 
 
-def get_day_data(lower_bound, upper_bound, machines_to_look_at, writer):
+def get_day_data(lower_bound, upper_bound, machines_to_look_at, writer, dt=False):
     """
     Writes all data for a machine to csv for neural network.
 
@@ -222,7 +224,11 @@ def get_day_data(lower_bound, upper_bound, machines_to_look_at, writer):
         machine_daily_data = machine.get_daily_data(lower_bound, upper_bound)
         pi_values = [t[1] for t in machine_daily_data]
         if not pi_values.count(pi_values[0]) == 1440:  # Don't process lists with all values the same.
-            writer.writerow(pi_values)
+            if dt:
+                row = [machine_code] + pi_values
+                writer.writerow(row)
+            else:
+                writer.writerow(pi_values)
             print("processed %s %d machines" % (machine_code, c))
         else:
             print("skipped %s" % machine_code)
@@ -234,10 +240,14 @@ machines_to_look_at = {}
 for m in relevant_machine_codes:
     machines_to_look_at[m] = relevant_machines[m]
 
-with open(os.path.join(NEURAL_NETWORK_DATA_PATH, "training_data.csv"), "w") as csv_fh:
+# with open(os.path.join(NEURAL_NETWORK_DATA_PATH, "training_data.csv"), "w") as csv_fh:
+with open(os.path.join(DECISION_TREE_DATA_PATH, "training_data.csv"), "w") as csv_fh:
+    decision_tree = True # if dt.
     csv_writer = csv.writer(csv_fh)
     csv_writer.writerow(training_data_labels)
-    get_day_data(training_day_lower, training_day_upper, machines_to_look_at, csv_writer)
+    # get_day_data(training_day_lower, training_day_upper, machines_to_look_at, csv_writer)
+    get_day_data(training_day_lower, training_day_upper, machines_to_look_at, csv_writer, dt=decision_tree)
+
 
 print("Finished processing training data")
 
@@ -259,10 +269,15 @@ print("Processed test labels")
 
 # Machines to look at stay the same.
 
-with open(os.path.join(NEURAL_NETWORK_DATA_PATH, "test_data.csv"), "w") as csv_fh:
+# with open(os.path.join(NEURAL_NETWORK_DATA_PATH, "test_data.csv"), "w") as csv_fh:
+with open(os.path.join(DECISION_TREE_DATA_PATH, "test_data.csv"), "w") as csv_fh:
+
+    decision_tree = True # if doing stuff for decision tree
     csv_writer = csv.writer(csv_fh)
     csv_writer.writerow(test_data_labels)
-    get_day_data(test_day_lower, test_day_upper, machines_to_look_at, csv_writer)
+    # get_day_data(test_day_lower, test_day_upper, machines_to_look_at, csv_writer)
+
+    get_day_data(test_day_lower, test_day_upper, machines_to_look_at, csv_writer, dt=decision_tree)
 
 print("Finished processing test data")
 
