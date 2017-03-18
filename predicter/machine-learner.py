@@ -144,9 +144,12 @@ for i in range(1000):
         print(loss)
 actual_outputs = [0 if x < 0.5 else 1 for x in sess.run(logits, feed_dict={inputs: np.array(testing_inputs)})]
 print(actual_outputs)
+print(testing_outputs)
 correct_answers = 0
-for actual_output_index in actual_outputs:
+for actual_output_index in range(len(actual_outputs)):
     actual_output = actual_outputs[actual_output_index]
-    if int(actual_output) == int(testing_outputs[actual_output_index][0]):
+    correct_output = testing_outputs[actual_output_index][0]
+    print("Comparing %s with %s" % (actual_output, correct_output))
+    if actual_output == correct_output:
         correct_answers += 1
 print("Success rate = %s percent" % ((correct_answers / len(actual_outputs)) * 100))
