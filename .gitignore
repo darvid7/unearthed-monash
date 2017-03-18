@@ -2,3 +2,6 @@
 .workspace
 /workspace
 /pats-data
+
+machine-timestamp-indicator/data/in/perf-indicator/
+/machine-timestamp-indicator/data/in/perf-indicator/
