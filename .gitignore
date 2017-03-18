@@ -2,3 +2,14 @@
 .workspace
 /workspace
 /pats-data
+
+machine-timestamp-indicator/data/in/perf-indicator/
+/machine-timestamp-indicator/data/in/perf-indicator/
+/__pycache__/
+machine-timestamp-indicator/model/__pycache__/
+machine-timestamp-indicator/model/__pycache__/
+*.pyc
+
+machine-timestamp-indicator/data/out/leading-up-to-failures
+machine-timestamp-indicator/data/out/persistence
+
