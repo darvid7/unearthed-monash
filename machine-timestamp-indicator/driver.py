@@ -235,7 +235,7 @@ machines_to_look_at = {}
 for m in relevant_machine_codes:
     machines_to_look_at[m] = relevant_machines[m]
 
-with open(os.path.join(NEURAL_NETWORK_DATA_PATH, "training_data.csv"), "w") as csv_fh:
+with open(os.path.join(NEURAL_NETWORK_DATA_PATH, "training-real.csv"), "w") as csv_fh:
     csv_writer = csv.writer(csv_fh)
     csv_writer.writerow(training_data_labels)
     get_day_data(training_day_lower, training_day_upper, machines_to_look_at, csv_writer)

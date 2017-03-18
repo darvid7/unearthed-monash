@@ -6,13 +6,20 @@ import numpy
 import os
 
 
+def to_number(value):
+    try:
+        return float(value)
+    except:
+        return 0
+
+
 def read_data(directory, file_name):
     with open(os.path.join(directory, file_name), 'r') as file_handler:
         return file_handler.readlines()
 
 
-def to_rows(file_lines):
-    return [[float(x) for x in row.strip().split(',')] for row in file_lines]
+def to_rows(file_lines, minute_window):
+    return [[to_number(x) for x in row.strip().split(',')] for row in file_lines]
 
 
 def transpose_columns(data_per_machine):
@@ -27,25 +34,59 @@ def transpose_columns(data_per_machine):
         data_per_minute[minute] = data_for_minute
     return data_per_minute
 
-def get_test_data(directory,file_name):
+
+def split_to_windows(array, window):
+    # [[0,1],[2,3],[4,5]] 1 + 3 - 2 = 1
+    # [[0,1],[0,1,2,3],[2,3,4,5]] becomes [window - 1:]
+    for data_index in range(len(array) - 1, window - 1, -1):
+        for offset in range(1, window):
+            array[data_index].extend(array[data_index - offset])
+    print("Extended: %s" % array)
+    return array[get_start_split_index(window):]
+
+
+def get_start_split_index(window_size):
+    return window_size
+
+
+def get_test_data(directory, file_name, minute_window, prediction_time):
     data = read_data(directory, file_name)
     print(data)
-    data_per_machine = to_rows(data)
+    data_per_machine = to_rows(data, minute_window)
     print(data_per_machine)
-    data_per_minute = transpose_columns(data_per_machine[1:])
+    data_per_minute = transpose_columns(data_per_machine)
     print("Transposed: " + str(data_per_minute))
-    training_inputs = data_per_minute
-    training_outputs = [[success] for success in data_per_machine[0]]
-    return training_inputs, training_outputs
+    training_inputs = split_to_windows(data_per_minute, minute_window)
+    training_outputs = [[0 if -1 == success else 1] for success in data_per_machine[0]]
+    training_outputs_to_predicted(training_outputs, prediction_time)
+    return training_inputs, training_outputs[get_start_split_index(minute_window):]
 
-training_inputs, training_outputs = get_test_data('./', 'training-data.csv')
-testing_inputs, testing_outputs = get_test_data('./', 'testing-data.csv')
+def training_outputs_to_predicted(outputs, predicition_time):
+    prediction_minutes_left = 0
+    i = len(outputs) - 1
+    predictions_added = 0
+    while i >= 0:
+        if outputs[i][0] == 0:
+            prediction_minutes_left = predicition_time
+        elif prediction_minutes_left > 0:
+            predictions_added += 1
+            outputs[i][0] = 0
+            prediction_minutes_left -= 1
+        i -= 1
+    print("Added %s 0s" % predictions_added)
+
+PREDICTION_TIME = 20
+MINUTE_WINDOW = 10
+training_inputs, training_outputs = get_test_data('./', 'training-real.csv', MINUTE_WINDOW, PREDICTION_TIME)
+testing_inputs, testing_outputs = get_test_data('./', 'training-real.csv', MINUTE_WINDOW, PREDICTION_TIME)
 print("Training inputs")
-print(training_inputs)
+#print(training_inputs)
 print("Training outputs")
 print(training_outputs)
-
-INPUT_SIZE = 3
+print("Training size: %s" % len(training_inputs))
+input()
+HIDDEN_UNITS = 2
+INPUT_SIZE = len(training_inputs[0])
 
 sess = tf.InteractiveSession()
 
@@ -56,7 +97,6 @@ inputs = tf.placeholder(tf.float32, shape=[None, INPUT_SIZE])
 desired_outputs = tf.placeholder(tf.float32, shape=[None, 1])
 
 # [!] define the number of hidden units in the first layer
-HIDDEN_UNITS = 4
 
 # connect 2 inputs to 3 hidden units
 # [!] Initialize weights with random numbers, to make the network learn
@@ -92,15 +132,16 @@ logits = tf.nn.sigmoid(tf.matmul(layer_2_outputs, weights_3) + biases_3)
 # TODO: replaced sub with subtract
 error_function = 0.5 * tf.reduce_sum(tf.subtract(logits, desired_outputs) * tf.subtract(logits, desired_outputs))
 
-train_step = tf.train.GradientDescentOptimizer(0.05).minimize(error_function)
+train_step = tf.train.MomentumOptimizer(0.05, 0.1).minimize(error_function)
 
 sess.run(tf.initialize_all_variables())
 
-for i in range(20000):
+for i in range(1000):
     _, loss = sess.run([train_step, error_function],
                        feed_dict={inputs: np.array(training_inputs),
                                   desired_outputs: np.array(training_outputs)})
-    print(loss)
+    if i % 100 == 0:
+        print(loss)
 actual_outputs = [0 if x < 0.5 else 1 for x in sess.run(logits, feed_dict={inputs: np.array(testing_inputs)})]
 print(actual_outputs)
 correct_answers = 0
