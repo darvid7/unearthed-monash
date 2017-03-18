@@ -14,7 +14,6 @@ from model import csv_failure_parser
 from model import day
 
 # Want to stablalize:  3311hs181A.PV	 SAG Dry (Fd  or Fd - Pbl)
-
 # Constants
 PERFORMANCE_INDICATOR_DATA = "/Users/David/Desktop/unearthed-2017/unearthed-monash/unearthed-monash/" \
                              "machine-timestamp-indicator/data/in/perf-indicator"
@@ -30,7 +29,7 @@ SHELVE_PERSISTANCE_PATH = "/Users/David/Desktop/unearthed-2017/unearthed-monash/
 NEURAL_NETWORK_DATA_PATH = "/Users/David/Desktop/unearthed-2017/unearthed-monash/unearthed-monash/" \
                           "machine-timestamp-indicator/data/out/neural-network/"
 
-use_persisting = True
+use_persisting = False
 
 SAG_MILL_MACHINE_CODES = [
     "1101047CL1.P01",
@@ -194,7 +193,7 @@ def is_time_failure(time_of_day, look_at_these_failures):
         else: # start_time <= time_of_day.
             f_end_time = failure.end_time
             if time_of_day <= f_end_time: # Failure occurs at this time.
-                return -1  # Fail.
+                return 0  # Fail.
             # Continue
     return 1  # Pass
 
@@ -202,7 +201,7 @@ def is_time_failure(time_of_day, look_at_these_failures):
 look_at_these_failures = get_relevant_failures(training_day_lower, training_day_upper, failure_collection)
 
 new_day = day.Day(training_day_lower, training_day_upper)
-training_data_labels = [is_time_failure(time_of_day,look_at_these_failures) for time_of_day in new_day.datetime_instances]
+training_data_labels = [is_time_failure(time_of_day, look_at_these_failures) for time_of_day in new_day.datetime_instances]
 print(training_data_labels)
 print(len(training_data_labels))
 print(len(new_day.datetime_instances))
@@ -240,13 +239,32 @@ with open(os.path.join(NEURAL_NETWORK_DATA_PATH, "training-real.csv"), "w") as c
     csv_writer.writerow(training_data_labels)
     get_day_data(training_day_lower, training_day_upper, machines_to_look_at, csv_writer)
 
-print("Finsihed processing training data")
+print("Finished processing training data")
 
 # Get test data
 
 # Training data - We want Jan 9.
 test_day_lower = datetime.datetime(2016, 1, 8, 23, 59, 59)  # Last second of Jan 1.
 test_day_upper = datetime.datetime(2016, 1, 10, 0, 0, 0)  # First second of Jan 2.
+
+test_data_failures = get_relevant_failures(test_day_lower, test_day_upper, failure_collection)
+
+test_day = day.Day(test_day_lower, test_day_upper)
+test_data_labels = [is_time_failure(time_of_day, test_data_failures) for time_of_day in test_day.datetime_instances]
+print(test_data_labels)
+print(len(test_data_labels))
+print(len(test_day.datetime_instances))
+print("Processed test labels")
+
+
+# Machines to look at stay the same.
+
+with open(os.path.join(NEURAL_NETWORK_DATA_PATH, "test_data.csv"), "w") as csv_fh:
+    csv_writer = csv.writer(csv_fh)
+    csv_writer.writerow(test_data_labels)
+    get_day_data(test_day_lower, test_day_upper, machines_to_look_at, csv_writer)
+
+print("Finished processing test data")
 
 """
 for failure in look_at_failures:
