@@ -51,6 +51,9 @@ class CsvPISheetParser:
         if cycle == "PM" and hours != 12:
             hours = int(hours) + 12
 
+        if cycle == "AM" and hours == 12:
+            hours = int(hours) - 12
+
         return hours, minutes, seconds
 
     def parse_timestamp(self, timestamp):

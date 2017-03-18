@@ -21,6 +21,20 @@ class Machine:
             raise TypeError("Invalid time stamp (%s) type %s" % (datetime_timestamp, datetime_timestamp.__class__))
         self.timestamp_perf_indicator_mapping[datetime_timestamp] = perf_indicator
 
+    def get_daily_data(self, lower_bound, upper_bound):
+        """Method to grab data points in a day for Neural Network."""
+        results = []  # Should be datetime, pi tuples
+        for datetime_object in self.timestamp_perf_indicator_mapping.keys():
+            if (datetime_object > lower_bound) and (datetime_object < upper_bound):
+                results.append((datetime_object, self.timestamp_perf_indicator_mapping[datetime_object]))
+        if len(results) != 1440:
+            raise ValueError("bad results len: " + str(len(results)))
+        results.sort(key=lambda t: t[0])  # sort by datetime object.
+        # print(len(results))
+        # print(results)
+        return results
+
+
     def get_n_hours(self, n, shutdown_time):
         """Returns ordered list of (timestamp, performance_indicator) tuples for the last n hours from the time of a shutdown (shutdown_time)
 
