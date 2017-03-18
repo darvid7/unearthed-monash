@@ -165,7 +165,7 @@ important dates:
 - 3/1/2016 (test): ~ 90 shut downs
 data points per day= 1 * 60 * 60 * 24 = 864000
 """
-# We want Jan 2.
+# Training data - We want Jan 2.
 training_day_lower = datetime.datetime(2016, 1, 1, 23, 59, 59)  # Last second of Jan 1.
 training_day_upper = datetime.datetime(2016, 1, 3, 0, 0, 0)  # First second of Jan 2.
 
@@ -238,10 +238,15 @@ for m in relevant_machine_codes:
 with open(os.path.join(NEURAL_NETWORK_DATA_PATH, "training_data.csv"), "w") as csv_fh:
     csv_writer = csv.writer(csv_fh)
     csv_writer.writerow(training_data_labels)
-    csv_writer.writerow(['apple'])
     get_day_data(training_day_lower, training_day_upper, machines_to_look_at, csv_writer)
 
+print("Finsihed processing training data")
 
+# Get test data
+
+# Training data - We want Jan 9.
+test_day_lower = datetime.datetime(2016, 1, 8, 23, 59, 59)  # Last second of Jan 1.
+test_day_upper = datetime.datetime(2016, 1, 10, 0, 0, 0)  # First second of Jan 2.
 
 """
 for failure in look_at_failures:
