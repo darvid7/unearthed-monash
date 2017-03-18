@@ -37,7 +37,9 @@ def discretize_data(data_array):
             else:
                 return False
         # Either round of times buy biggest factor.
-        data_array[i] = int(round(data, 0))
+        data = data * 100000  # increase granularity.
+        data = int(round(data, 0))
+        data_array[i] = data
     return data_array
 
 def parse_labels(labels):
@@ -73,10 +75,8 @@ def parse_csv(data_path, filename):
 def commonize_features_pre_processing(matrix, data_is_training):
     global decision_tree_common_features
     for machine_pi_row in matrix:
-        try:
-            machine_component = machine_pi_row[0].strip("\n,\r")
-        except AttributeError:
-            pass
+        machine_component = machine_pi_row[0].strip("\n,\r")
+
         if machine_component in decision_tree_common_features:
             if data_is_training:
                 decision_tree_common_features[machine_component].in_train = True
