@@ -7,12 +7,12 @@ import unicodedata
 
 def to_number(s):
     if s is None:
-        return None
+        return -10000
     try:
         return float(s)
     except ValueError:
         pass
-    return None
+    return -10000
 
 
 def read_columns(directory, file_name):
@@ -71,12 +71,13 @@ def correlations(columns, bad_grid):
         title_1 = column_1[0]
         bad_indexes_1 = bad_grid[col_index_1]
         if len(column_1) - len(bad_indexes_1) <= 3:
-            print("Column 1 too few data entries, skipping")
+            #print("Column 1 too few data entries, skipping")
             continue
+        print(col_index_1)
         for col_index_2 in range(0, len(columns)):
             if col_index_1 == col_index_2:
                 continue
-            print("Correlating %s and %s" % (col_index_1, col_index_2))
+            #print("Correlating %s and %s" % (col_index_1, col_index_2))
             column_2 = columns[col_index_2]
             bad_indexes_2 = bad_grid[col_index_2]
             title_2 = column_2[0]
@@ -94,8 +95,8 @@ def correlations(columns, bad_grid):
                     data_set_1.append(column_1[r])
                     data_set_2.append(column_2[r])
                 r += 1
-            x_set = numpy.array([x for x in data_set_1])
-            y_set = numpy.array([x for x in data_set_2])
+            x_set = numpy.array(column_1[1:])
+            y_set = numpy.array(column_2[1:])
             linear_coefficients = numpy.polyfit(x_set, y_set, 1)
             p = numpy.poly1d(linear_coefficients)
             y_hat = p(x_set)  # or [p(z) for z in x]
@@ -115,7 +116,7 @@ def write_to_csv(directory, file_name, columns):
 
 
 directory = "../pats-data/"
-file_name = "accum.csv"
+file_name = "20160101_20160201_3212SI005A.PV.csv"
 write_file_name = "correlations_" + file_name
 print("Reading columns...")
 columns = read_columns(directory, file_name)
