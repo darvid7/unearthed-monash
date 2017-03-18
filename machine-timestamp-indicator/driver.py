@@ -222,8 +222,11 @@ def get_day_data(lower_bound, upper_bound, machines_to_look_at, writer):
         machine = machines_to_look_at[machine_code]
         machine_daily_data = machine.get_daily_data(lower_bound, upper_bound)
         pi_values = [t[1] for t in machine_daily_data]
-        writer.writerow(pi_values)
-        print("processed %d machines" % c)
+        if not pi_values.count(pi_values[0]) == 1440:  # Don't process lists with all values the same.
+            writer.writerow(pi_values)
+            print("processed %s %d machines" % (machine_code, c))
+        else:
+            print("skipped %s" % machine_code)
         c += 1
 
 # Actual machines to look at.
