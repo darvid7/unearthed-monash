@@ -38,11 +38,19 @@ def get_test_data(directory,file_name):
     training_outputs = [[success] for success in data_per_machine[0]]
     return training_inputs, training_outputs
 
+training_inputs, training_outputs = get_test_data('./', 'training-data.csv')
+testing_inputs, testing_outputs = get_test_data('./', 'testing-data.csv')
+print("Training inputs")
+print(training_inputs)
+print("Training outputs")
+print(training_outputs)
+
+INPUT_SIZE = 3
 
 sess = tf.InteractiveSession()
 
 # a batch of inputs of 2 value each
-inputs = tf.placeholder(tf.float32, shape=[None, 2])
+inputs = tf.placeholder(tf.float32, shape=[None, INPUT_SIZE])
 
 # a batch of output of 1 value each
 desired_outputs = tf.placeholder(tf.float32, shape=[None, 1])
@@ -52,7 +60,7 @@ HIDDEN_UNITS = 4
 
 # connect 2 inputs to 3 hidden units
 # [!] Initialize weights with random numbers, to make the network learn
-weights_1 = tf.Variable(tf.truncated_normal([2, HIDDEN_UNITS]))
+weights_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_UNITS]))
 
 # [!] The biases are single values per hidden unit
 biases_1 = tf.Variable(tf.zeros([HIDDEN_UNITS]))
@@ -88,12 +96,6 @@ train_step = tf.train.GradientDescentOptimizer(0.05).minimize(error_function)
 
 sess.run(tf.initialize_all_variables())
 
-training_inputs, training_outputs = get_test_data('./', 'training-data.csv')
-testing_inputs, testing_outputs = get_test_data('./', 'testing-data.csv')
-print("Training inputs")
-print(training_inputs)
-print("Training outputs")
-print(training_outputs)
 for i in range(20000):
     _, loss = sess.run([train_step, error_function],
                        feed_dict={inputs: np.array(training_inputs),
