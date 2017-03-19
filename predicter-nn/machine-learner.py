@@ -10,7 +10,7 @@ def to_number(value):
     try:
         return float(value)
     except:
-        return 0
+        return -100
 
 
 def read_data(directory, file_name):
@@ -149,19 +149,21 @@ logits = tf.nn.sigmoid(tf.matmul(layer_2_outputs, weights_3) + biases_3)
 # TODO: replaced sub with subtract
 error_function = 0.5 * tf.reduce_sum(tf.square(tf.subtract(logits, desired_outputs)))
 
-train_step = tf.train.MomentumOptimizer(0.0001, 0.05).minimize(error_function)
+train_step = tf.train.MomentumOptimizer(0.00008, 0.05).minimize(error_function)
 
 sess.run(tf.global_variables_initializer())
 
-for i in range(3000):
+for i in range(4000):
     _, loss = sess.run([train_step, error_function],
                        feed_dict={inputs: np.array(training_inputs),
                                   desired_outputs: np.array(training_outputs)})
     if i % 100 == 0:
         print(loss)
 actual_outputs = [x for x in sess.run(logits, feed_dict={inputs: np.array(testing_inputs)})]
+trained_actual_outputs = [x for x in sess.run(logits, feed_dict={inputs: np.array(training_inputs)})]
 print(actual_outputs)
 print(testing_outputs)
+already_tested_correct_answers = 0
 correct_answers = 0
 for actual_output_index in range(len(actual_outputs)):
     actual_output = actual_outputs[actual_output_index]
@@ -169,4 +171,7 @@ for actual_output_index in range(len(actual_outputs)):
     print("Comparing %s with %s" % (actual_output, correct_output))
     if to_rounded_value(actual_output) == correct_output:
         correct_answers += 1
+    if to_rounded_value(trained_actual_outputs[actual_output_index]) == training_outputs[actual_output_index][0]:
+        already_tested_correct_answers += 1
 print("Success rate = %s percent" % ((correct_answers / len(actual_outputs)) * 100))
+print("Success rate for trained data = %s percent" % ((already_tested_correct_answers / len(actual_outputs)) * 100))
