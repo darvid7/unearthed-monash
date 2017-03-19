@@ -177,6 +177,10 @@ def get_relevant_failures(lower_bound, upper_bound, failure_collection):
     relevant = []
     for failure_id in failure_collection:
         failure = failure_collection[failure_id]
+        if failure.problem_type in ["Operational", "Mechanical"]:
+            pass
+        else:
+            continue
         if failure.start_time > lower_bound and failure.end_time < upper_bound:
             relevant.append(failure)
     relevant.sort(key=lambda f: f.start_time)  # sort failures by state time so can linear search through.
