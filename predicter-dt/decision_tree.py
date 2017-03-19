@@ -54,7 +54,7 @@ def parse_labels(labels):
         else:
             # raise ValueError
             pass # \n
-    print(str(len(res)) + " labels")
+    # print(str(len(res)) + " labels")
     return res
 
 def parse_csv(data_path, filename):
@@ -134,7 +134,7 @@ def calc_accuracy(prediction, actual_labels):
     for i in range(len(prediction)):
         if prediction[i] == actual_labels[i]:
             correct += 1
-    print(correct)
+    # print(correct)
     return correct, len(actual_labels)
 
 def make_my_decisions():
@@ -150,12 +150,13 @@ def make_my_decisions():
     # test_features = samples_as_time_slots(test_features, data_is_training=False)
 
     test_features, training_features = only_use_features_in_both(test_features, training_features)
-    print("Training")
-    print(len(training_features))
-    print(training_features)
-    print("Testing")
-    print(len(test_features))
-    print(test_features)
+    print("Number of training data points %d" % (len(test_features) * len(test_features[0])))
+    print("Training Groot")
+    # print(len(training_features))
+    print("Training features: " + str(training_features))
+    print("Processing test data on Groot")
+    # print(len(test_features))
+    print("Test features: " + str(test_features))
 
     groot = tree.DecisionTreeClassifier()
     groot = groot.fit(training_features, labels)
@@ -165,9 +166,9 @@ def make_my_decisions():
 
     prediction = groot.predict(test_features)
     print("Predictions: " + str(prediction))
-    print("Test data labels: " + str(test_labels))
+    print("Actual: " + str(test_labels))
     prediction = list(prediction)
-    print(prediction)
+    # print(prediction)
     correct, total = calc_accuracy(prediction, test_labels)
     # print("Accuracy: %f" % (correct/total))
     calculate_correct_predictions(prediction, test_labels)
@@ -175,7 +176,7 @@ def make_my_decisions():
 
 def calculate_correct_predictions(prediction, actual):
     nf = actual.count("No")
-    print("NF: %s" % nf)
+    # print("NF: %s" % nf)
     n_failures = 0
     n_correct_predicted_failures = 0
     failed_but_predicted_pass = 0
@@ -200,7 +201,7 @@ def calculate_correct_predictions(prediction, actual):
             elif res == "No":
                 passed_but_predicted_failed += 1
 
-    print("<<Stats>>")
+    # print("<<Stats>>")
     # print("Failed but predicted pass: %d" % failed_but_predicted_pass)
     # print("Passed but predicted failed: %d" % passed_but_predicted_failed)
     # print("Passed and predicted passed: %d" % correct_pass)
