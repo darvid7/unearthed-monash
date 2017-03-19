@@ -169,7 +169,7 @@ def make_my_decisions():
     prediction = list(prediction)
     print(prediction)
     correct, total = calc_accuracy(prediction, test_labels)
-    print("Accuracy: %f" % (correct/total))
+    # print("Accuracy: %f" % (correct/total))
     calculate_correct_predictions(prediction, test_labels)
 
 
@@ -201,12 +201,12 @@ def calculate_correct_predictions(prediction, actual):
                 passed_but_predicted_failed += 1
 
     print("<<Stats>>")
-    print("Failed but predicted pass: %d" % failed_but_predicted_pass)
-    print("Passed but predicted failed: %d" % passed_but_predicted_failed)
-    print("Passed and predicted passed: %d" % correct_pass)
-    print("no of failures: %d" % n_failures)
-    print("no of correctly predicted failures: %d" % n_correct_predicted_failures)
-    print("accuracy of correct predicted failures %s" % (float(n_correct_predicted_failures)/float(n_failures)))
+    # print("Failed but predicted pass: %d" % failed_but_predicted_pass)
+    # print("Passed but predicted failed: %d" % passed_but_predicted_failed)
+    # print("Passed and predicted passed: %d" % correct_pass)
+    print("Number of failures: %d" % n_failures)
+    print("Number of correctly predicted failures: %d" % n_correct_predicted_failures)
+    print("Accuracy of correct predicted failures %s" % (float(n_correct_predicted_failures)/float(n_failures)))
 
 
 
