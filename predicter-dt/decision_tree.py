@@ -170,6 +170,44 @@ def make_my_decisions():
     print(prediction)
     correct, total = calc_accuracy(prediction, test_labels)
     print("Accuracy: %f" % (correct/total))
+    calculate_correct_predictions(prediction, test_labels)
+
+
+def calculate_correct_predictions(prediction, actual):
+    nf = actual.count("No")
+    print("NF: %s" % nf)
+    n_failures = 0
+    n_correct_predicted_failures = 0
+    failed_but_predicted_pass = 0
+    correct_pass = 0
+    passed_but_predicted_failed = 0
+
+    for i in range(len(prediction)):
+        res = prediction[i]
+        res_actual = actual[i]
+
+        if res_actual == "No":
+            n_failures += 1
+
+            if res == "No":
+                n_correct_predicted_failures += 1
+            else:
+                failed_but_predicted_pass += 1
+
+        if res_actual == "Yes":
+            if res == "Yes":
+                correct_pass  += 1
+            elif res == "No":
+                passed_but_predicted_failed += 1
+
+    print("<<Stats>>")
+    print("Failed but predicted pass: %d" % failed_but_predicted_pass)
+    print("Passed but predicted failed: %d" % passed_but_predicted_failed)
+    print("Passed and predicted passed: %d" % correct_pass)
+    print("no of failures: %d" % n_failures)
+    print("no of correctly predicted failures: %d" % n_correct_predicted_failures)
+    print("accuracy of correct predicted failures %s" % (float(n_correct_predicted_failures)/float(n_failures)))
+
 
 
 make_my_decisions()
