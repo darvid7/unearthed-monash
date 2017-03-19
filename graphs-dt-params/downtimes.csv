@@ -1,0 +1,4 @@
+# Downtimes
+
+Conc1 SAG Mill,2015-02-03 00:00:00.000,2015-02-03 00:00:00.000,DAY,2015-02-03 11:44:00.000,2015-02-03 11:47:00.000,E,0.0000,0.2857,0.0000,Unplanned,Operational,Process Variation,Process Variation,221ML001,SAG Mill (Conc1),Auto Assigned based on a rule; Rate Loss event < 2 minutes
+Conc1 SAG Mill,2015-02-03 00:00:00.000,2015-02-03 00:00:00.000,DAY,2015-02-03 18:43:00.000,2015-02-03 18:44:00.000,E,0.0000,0.0454,0.0000,Unplanned,Operational,Process Variation,Process Variation,221ML001,SAG Mill (Conc1),Auto Assigned based on a rule; Rate Loss event < 2 minutes
