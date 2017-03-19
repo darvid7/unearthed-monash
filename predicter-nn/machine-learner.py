@@ -10,7 +10,7 @@ def to_number(value):
     try:
         return float(value)
     except:
-        return 0
+        return -100
 
 
 def read_data(directory, file_name):
@@ -18,8 +18,15 @@ def read_data(directory, file_name):
         return file_handler.readlines()
 
 
-def to_rows(file_lines, minute_window):
-    return [[to_number(x) for x in row.strip().split(',')] for row in file_lines]
+def to_rows(file_lines):
+    rows = [[to_number(x.strip()) for x in row.split(',')] for row in file_lines]
+    for row in rows:
+        max_value = max(row)
+        if max_value == 0:
+            continue
+        for column_index in range(len(row)):
+            row[column_index] /= max_value
+    return rows
 
 
 def transpose_columns(data_per_machine):
@@ -37,56 +44,66 @@ def transpose_columns(data_per_machine):
 
 def split_to_windows(array, window):
     # [[0,1],[2,3],[4,5]] 1 + 3 - 2 = 1
+    # [[1],[0],[-1]]
     # [[0,1],[0,1,2,3],[2,3,4,5]] becomes [window - 1:]
-    for data_index in range(len(array) - 1, window - 1, -1):
+    # [[1], [0]] # becomes [:1+len() - window] 1+ 3 - 2 = 1
+    for data_index in range(len(array) + 1 - window):
         for offset in range(1, window):
-            array[data_index].extend(array[data_index - offset])
+            array[data_index].extend(array[data_index + offset])
     print("Extended: %s" % array)
-    return array[get_start_split_index(window):]
+    return array[:get_start_split_index(array, window)]
 
 
-def get_start_split_index(window_size):
-    return window_size
+def get_start_split_index(array,window_size):
+    return 1+len(array) - window_size
 
 
 def get_test_data(directory, file_name, minute_window, prediction_time):
     data = read_data(directory, file_name)
     print(data)
-    data_per_machine = to_rows(data, minute_window)
+    data_per_machine = to_rows(data)
     print(data_per_machine)
     data_per_minute = transpose_columns(data_per_machine)
-    print("Transposed: " + str(data_per_minute))
+    #print("Transposed: " + str(data_per_minute))
     training_inputs = split_to_windows(data_per_minute, minute_window)
-    training_outputs = [[0 if -1 == success else 1] for success in data_per_machine[0]]
+    training_outputs = [[int(success)] for success in data_per_machine[0]]
     training_outputs_to_predicted(training_outputs, prediction_time)
-    return training_inputs, training_outputs[get_start_split_index(minute_window):]
+    return training_inputs, training_outputs[:get_start_split_index(training_outputs,minute_window)]
 
-def training_outputs_to_predicted(outputs, predicition_time):
+
+def to_rounded_value(value):
+    return 0 if value < 0.5 else 1
+
+
+def training_outputs_to_predicted(outputs, prediction_time):
     prediction_minutes_left = 0
-    i = len(outputs) - 1
+    i = 0
     predictions_added = 0
-    while i >= 0:
+    while i < len(outputs):
         if outputs[i][0] == 0:
-            prediction_minutes_left = predicition_time
+            prediction_minutes_left = prediction_time
         elif prediction_minutes_left > 0:
             predictions_added += 1
             outputs[i][0] = 0
             prediction_minutes_left -= 1
-        i -= 1
+        i += 1
     print("Added %s 0s" % predictions_added)
 
+
+tf.set_random_seed(0)
 PREDICTION_TIME = 20
-MINUTE_WINDOW = 10
-training_inputs, training_outputs = get_test_data('./', 'training-real.csv', MINUTE_WINDOW, PREDICTION_TIME)
-testing_inputs, testing_outputs = get_test_data('./', 'training-real.csv', MINUTE_WINDOW, PREDICTION_TIME)
+MINUTE_WINDOW = 5#0
+directory = '../machine-timestamp-indicator/data/out/neural-network/'
+training_inputs, training_outputs = get_test_data(directory, 'training_data.csv', MINUTE_WINDOW, PREDICTION_TIME)
+testing_inputs, testing_outputs = get_test_data(directory, 'test_data.csv', MINUTE_WINDOW, PREDICTION_TIME)
 print("Training inputs")
 #print(training_inputs)
 print("Training outputs")
 print(training_outputs)
 print("Training size: %s" % len(training_inputs))
 input()
-HIDDEN_UNITS = 2
 INPUT_SIZE = len(training_inputs[0])
+HIDDEN_UNITS = INPUT_SIZE
 
 sess = tf.InteractiveSession()
 
@@ -130,26 +147,31 @@ logits = tf.nn.sigmoid(tf.matmul(layer_2_outputs, weights_3) + biases_3)
 
 # [!] The error function chosen is good for a multiclass classification taks, not for a XOR.
 # TODO: replaced sub with subtract
-error_function = 0.5 * tf.reduce_sum(tf.subtract(logits, desired_outputs) * tf.subtract(logits, desired_outputs))
+error_function = 0.5 * tf.reduce_sum(tf.square(tf.subtract(logits, desired_outputs)))
 
-train_step = tf.train.MomentumOptimizer(0.05, 0.1).minimize(error_function)
+train_step = tf.train.MomentumOptimizer(0.00008, 0.05).minimize(error_function)
 
-sess.run(tf.initialize_all_variables())
+sess.run(tf.global_variables_initializer())
 
-for i in range(1000):
+for i in range(4000):
     _, loss = sess.run([train_step, error_function],
                        feed_dict={inputs: np.array(training_inputs),
                                   desired_outputs: np.array(training_outputs)})
     if i % 100 == 0:
         print(loss)
-actual_outputs = [0 if x < 0.5 else 1 for x in sess.run(logits, feed_dict={inputs: np.array(testing_inputs)})]
+actual_outputs = [x for x in sess.run(logits, feed_dict={inputs: np.array(testing_inputs)})]
+trained_actual_outputs = [x for x in sess.run(logits, feed_dict={inputs: np.array(training_inputs)})]
 print(actual_outputs)
 print(testing_outputs)
+already_tested_correct_answers = 0
 correct_answers = 0
 for actual_output_index in range(len(actual_outputs)):
     actual_output = actual_outputs[actual_output_index]
     correct_output = testing_outputs[actual_output_index][0]
     print("Comparing %s with %s" % (actual_output, correct_output))
-    if actual_output == correct_output:
+    if to_rounded_value(actual_output) == correct_output:
         correct_answers += 1
+    if to_rounded_value(trained_actual_outputs[actual_output_index]) == training_outputs[actual_output_index][0]:
+        already_tested_correct_answers += 1
 print("Success rate = %s percent" % ((correct_answers / len(actual_outputs)) * 100))
+print("Success rate for trained data = %s percent" % ((already_tested_correct_answers / len(actual_outputs)) * 100))
