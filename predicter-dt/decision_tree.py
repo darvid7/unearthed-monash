@@ -122,7 +122,7 @@ def samples_as_time_slots(samples_matrix, can_use_machine_codes):
 
 
 def cal_you_god(groot, filename):
-    dot_data = tree.export_graphviz(groot, feature_names=can_use_machine_codes, out_file=None, filled=True)
+    dot_data = tree.export_graphviz(groot, feature_names=can_use_machine_codes, out_file=None, filled=True, proportion=True)
     graph = pydotplus.graph_from_dot_data(dot_data)
     graph.write_pdf(filename)
 
