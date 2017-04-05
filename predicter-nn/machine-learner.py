@@ -54,8 +54,8 @@ def split_to_windows(array, window):
     return array[:get_start_split_index(array, window)]
 
 
-def get_start_split_index(array,window_size):
-    return 1+len(array) - window_size
+def get_start_split_index(array, window_size):
+    return 1 + len(array) - window_size
 
 
 def get_test_data(directory, file_name, minute_window, prediction_time):
@@ -64,11 +64,11 @@ def get_test_data(directory, file_name, minute_window, prediction_time):
     data_per_machine = to_rows(data)
     print(data_per_machine)
     data_per_minute = transpose_columns(data_per_machine)
-    #print("Transposed: " + str(data_per_minute))
+    # print("Transposed: " + str(data_per_minute))
     training_inputs = split_to_windows(data_per_minute, minute_window)
     training_outputs = [[int(success)] for success in data_per_machine[0]]
     training_outputs_to_predicted(training_outputs, prediction_time)
-    return training_inputs, training_outputs[:get_start_split_index(training_outputs,minute_window)]
+    return training_inputs, training_outputs[:get_start_split_index(training_outputs, minute_window)]
 
 
 def to_rounded_value(value):
@@ -90,14 +90,58 @@ def training_outputs_to_predicted(outputs, prediction_time):
     print("Added %s 0s" % predictions_added)
 
 
+def test_ai(session, logits, inputs, testing_inputs_data, correct_outputs_data):
+    correct_prediction_count = 0
+    prediction_count = 0
+    correct_zero_count = 0
+    zero_count = 0
+    correct_count = 0
+    ai_outputs_data = (x for x in session.run(logits, feed_dict={inputs: np.array(testing_inputs_data)}))
+    previous_ai_value = None
+    previous_correct_value = None
+    for test_case_index in range(len(correct_outputs_data)):
+        correct_outputs = correct_outputs_data[test_case_index]
+        ai_outputs = next(ai_outputs_data)
+        ai_output = (1 if 0.5 < ai_outputs[0] else 0)
+        is_correct = correct_outputs[0] == ai_output
+        if is_correct:
+            # Correct!
+            correct_count += 1
+        if ai_output == 0:
+            if previous_ai_value != ai_output:
+                # False prediction!
+                prediction_count += 1
+                if is_correct:
+                    correct_prediction_count += 1
+        elif correct_outputs[0] == 0:
+            if previous_correct_value != correct_outputs_data[0]:
+                # False everything-is-okay!
+                prediction_count += 1
+        if correct_outputs[0] == 0:
+            # Falsely outputting that downtime is going to happen
+            zero_count += 1
+            if is_correct:
+                correct_zero_count += 1
+        # Set the previous values so we can check if the neural network has made another prediction
+        # or if it SHOULD make another prediction
+        previous_ai_value = ai_output
+        previous_correct_value = correct_outputs[0]
+    results = len(correct_outputs_data), correct_count, zero_count, correct_zero_count, prediction_count, correct_prediction_count
+    return results
+
+
+def get_correction_rate(count, correct_count):
+    return correct_count / count if count > 0 else 1
+
+
 tf.set_random_seed(0)
 PREDICTION_TIME = 20
-MINUTE_WINDOW = 5#0
+MINUTE_WINDOW = 5  # 0
 directory = '../machine-timestamp-indicator/data/out/neural-network/'
 training_inputs, training_outputs = get_test_data(directory, 'training_data.csv', MINUTE_WINDOW, PREDICTION_TIME)
 testing_inputs, testing_outputs = get_test_data(directory, 'test_data.csv', MINUTE_WINDOW, PREDICTION_TIME)
 print("Training inputs")
-#print(training_inputs)
+# print(training_inputs)
 print("Training outputs")
 print(training_outputs)
 print("Training size: %s" % len(training_inputs))
@@ -149,29 +193,73 @@ logits = tf.nn.sigmoid(tf.matmul(layer_2_outputs, weights_3) + biases_3)
 # TODO: replaced sub with subtract
 error_function = 0.5 * tf.reduce_sum(tf.square(tf.subtract(logits, desired_outputs)))
 
-train_step = tf.train.MomentumOptimizer(0.00008, 0.05).minimize(error_function)
+train_step = tf.train.MomentumOptimizer(0.0001012342128, 0.2012653236565).minimize(error_function)
 
 sess.run(tf.global_variables_initializer())
-
-for i in range(4000):
-    _, loss = sess.run([train_step, error_function],
-                       feed_dict={inputs: np.array(training_inputs),
-                                  desired_outputs: np.array(training_outputs)})
+previous_success_rate = -1
+CONSECTUIVE_DOWNGRADE_THRESHOLD = 40
+CONSECUTIVE_STAGNATION_THRESHOLD = 60
+consectutive_downgrades = 0
+consectutive_stagnations = 0
+for i in range(2000):
+    _, train_error = sess.run([train_step, error_function],
+                              feed_dict={inputs: np.array(training_inputs),
+                                         desired_outputs: np.array(training_outputs)})
+    test_count, test_correct, downtime_count, downtime_correct_count, prediction_count, prediction_correct_count = test_ai(
+        sess, logits, inputs, testing_inputs, testing_outputs)
+    train_count, train_correct, train_downtime_count, train_downtime_correct_count, train_prediction_count, train_prediction_correct_count = test_ai(
+        sess, logits, inputs, testing_inputs, testing_outputs)
+    test_count += train_count
+    test_correct += train_correct
+    downtime_count += train_downtime_count
+    downtime_correct_count += train_downtime_correct_count
+    prediction_count += train_prediction_count
+    prediction_correct_count += train_prediction_correct_count
+    downtime_weighting = 1
+    prediction_weighting = 2
+    downtime_success_rate = downtime_correct_count / downtime_count
+    test_success_rate = test_correct / test_count
+    prediction_success_rate = prediction_correct_count / prediction_count
+    success_rate = (
+                   downtime_success_rate * downtime_weighting + test_success_rate + prediction_success_rate * prediction_weighting) / (
+                   downtime_weighting + prediction_weighting + 1)
+    if i % 20 == 0:
+        print("Downgrades %s, stagnation %s" % (consectutive_downgrades, consectutive_stagnations))
+        print("%s, %s, %s" % (test_success_rate, downtime_success_rate, prediction_success_rate))
+        print("Test success rate %s: %s" % (i, success_rate))
     if i % 100 == 0:
-        print(loss)
-actual_outputs = [x for x in sess.run(logits, feed_dict={inputs: np.array(testing_inputs)})]
-trained_actual_outputs = [x for x in sess.run(logits, feed_dict={inputs: np.array(training_inputs)})]
-print(actual_outputs)
-print(testing_outputs)
-already_tested_correct_answers = 0
-correct_answers = 0
-for actual_output_index in range(len(actual_outputs)):
-    actual_output = actual_outputs[actual_output_index]
-    correct_output = testing_outputs[actual_output_index][0]
-    print("Comparing %s with %s" % (actual_output, correct_output))
-    if to_rounded_value(actual_output) == correct_output:
-        correct_answers += 1
-    if to_rounded_value(trained_actual_outputs[actual_output_index]) == training_outputs[actual_output_index][0]:
-        already_tested_correct_answers += 1
-print("Success rate = %s percent" % ((correct_answers / len(actual_outputs)) * 100))
-print("Success rate for trained data = %s percent" % ((already_tested_correct_answers / len(actual_outputs)) * 100))
+        print("Iteration %s: %s" % (i, train_error))
+
+    if success_rate < previous_success_rate:
+        consectutive_downgrades += 1
+        if consectutive_downgrades >= CONSECTUIVE_DOWNGRADE_THRESHOLD:
+            print("%s consecutive downgrades, breaking at %s" % (consectutive_downgrades, i))
+            break
+    elif success_rate == previous_success_rate:
+        consectutive_stagnations += 1
+        if consectutive_stagnations >= CONSECUTIVE_STAGNATION_THRESHOLD:
+            print("%s consecutive stagnation, breaking at %s" % (consectutive_stagnations, i))
+            break
+    else:
+        consectutive_downgrades = 0
+        consectutive_stagnations = 0
+
+    previous_success_rate = success_rate
+print()
+training_test_count, training_correct_count, training_prediction_count, training_correct_prediction_count, tr_pr_c, tr_pr_c_c = test_ai(
+    sess, logits, inputs, training_inputs, training_outputs)
+testing_test_count, testing_correct_count, testing_prediction_count, testing_correct_prediction_count, t_pr_c, t_pr_c_c = test_ai(
+    sess,
+    logits,
+    inputs,
+    testing_inputs,
+    testing_outputs)
+print("Training data accuracy: %s percent" % (get_correction_rate(training_test_count, training_correct_count) * 100))
+print("Training data prediction rate: %s percent" % (
+    get_correction_rate(training_prediction_count, training_correct_prediction_count) * 100))
+print("Testing data downtime warning accuracy: %s percent" % (get_correction_rate(tr_pr_c, tr_pr_c_c) * 100))
+print()
+print("Testing data accuracy: %s percent" % (get_correction_rate(testing_test_count, testing_correct_count) * 100))
+print("Testing data prediction accuracy: %s percent" % (
+    get_correction_rate(testing_prediction_count, testing_correct_prediction_count) * 100))
+print("Testing data downtime warning accuracy: %s percent" % (get_correction_rate(t_pr_c, t_pr_c_c) * 100))
